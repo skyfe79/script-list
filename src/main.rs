@@ -116,14 +116,9 @@ fn read_package_json(path: &PathBuf) -> Result<PackageJson> {
 }
 
 fn print_header(package: &PackageJson) {
-    println!();
     if let Some(name) = &package.name {
-        println!("{}", format!("📦 {}", name).bold().cyan());
+        println!("{}", name.green().bold());
     }
-    if let Some(desc) = &package.description {
-        println!("{}", desc.dimmed());
-    }
-    println!();
 }
 
 fn print_table(scripts: &[(String, String)], names_only: bool) {
@@ -134,26 +129,12 @@ fn print_table(scripts: &[(String, String)], names_only: bool) {
         return;
     }
 
-    // Calculate column widths
-    let name_width = scripts.iter().map(|(n, _)| n.len()).max().unwrap_or(10);
-    let name_width = name_width.max(10);
-
-    // Header
-    println!("{:<width$}  {}", "Script".bold().underline(), "Command".bold().underline(), width = name_width);
-    println!("{}", "─".repeat(name_width + 2 + 50).dimmed());
-
-    // Rows
+    // Print each script in clean format
     for (name, command) in scripts {
-        let display_cmd = if command.len() > 50 {
-            format!("{}...", &command[..47])
-        } else {
-            command.clone()
-        };
-        println!("{:<width$}  {}", name.green().bold(), display_cmd.dimmed(), width = name_width);
+        println!("  {} : {}", name.green(), command);
     }
 
     println!();
-    println!("{} {}", "ℹ️".cyan(), format!("Found {} script(s)", scripts.len()).dimmed());
 }
 
 fn print_list(scripts: &[(String, String)], names_only: bool) {
