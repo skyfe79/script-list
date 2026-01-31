@@ -77,6 +77,46 @@ function extractTarGz(tarPath, destDir) {
   }
 }
 
+function checkCargo() {
+  try {
+    execSync('cargo --version', { stdio: 'pipe' });
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+function buildFromSource() {
+  console.log('📦 Building from source with cargo...');
+  try {
+    // Clone and build
+    const tempDir = require('os').tmpdir();
+    const buildDir = path.join(tempDir, 'script-list-build-' + Date.now());
+    
+    execSync(`git clone --depth 1 https://github.com/${GITHUB_REPO}.git "${buildDir}"`, { stdio: 'inherit' });
+    execSync(`cd "${buildDir}" && cargo build --release`, { stdio: 'inherit' });
+    
+    // Copy binary to bin directory
+    if (!fs.existsSync(BIN_DIR)) {
+      fs.mkdirSync(BIN_DIR, { recursive: true });
+    }
+    
+    const builtBinary = path.join(buildDir, 'target', 'release', BINARY_NAME);
+    const destBinary = path.join(BIN_DIR, BINARY_NAME);
+    
+    fs.copyFileSync(builtBinary, destBinary);
+    fs.chmodSync(destBinary, 0o755);
+    
+    // Cleanup
+    execSync(`rm -rf "${buildDir}"`);
+    
+    console.log('✅ Build from source complete!');
+    return destBinary;
+  } catch (error) {
+    throw new Error(`Failed to build from source: ${error.message}`);
+  }
+}
+
 async function install() {
   try {
     // Read version from package.json
@@ -102,20 +142,48 @@ async function install() {
       return;
     }
     
-    // Download binary
-    const downloadUrl = getBinaryUrl(version, platform, arch);
-    const tempFile = path.join(__dirname, 'sl.tar.gz');
-    
-    console.log(`Downloading from: ${downloadUrl}`);
-    await downloadFile(downloadUrl, tempFile);
-    
-    // Extract
-    console.log('Extracting...');
-    extractTarGz(tempFile, BIN_DIR);
-    
-    // Make executable (Unix only)
-    if (process.platform !== 'win32') {
-      fs.chmodSync(binaryPath, 0o755);
+    // Try to download pre-built binary first
+    let installed = false;
+    try {
+      const downloadUrl = getBinaryUrl(version, platform, arch);
+      const tempFile = path.join(__dirname, 'sl.tar.gz');
+      
+      console.log(`Downloading from: ${downloadUrl}`);
+      await downloadFile(downloadUrl, tempFile);
+      
+      // Extract
+      console.log('Extracting...');
+      extractTarGz(tempFile, BIN_DIR);
+      
+      // Make executable (Unix only)
+      if (process.platform !== 'win32') {
+        fs.chmodSync(binaryPath, 0o755);
+      }
+      
+      // Cleanup
+      fs.unlinkSync(tempFile);
+      
+      installed = true;
+      console.log('✅ Downloaded pre-built binary!');
+    } catch (downloadError) {
+      console.log('⚠️  Pre-built binary not available.');
+      
+      // Try to build from source if cargo is available
+      if (checkCargo()) {
+        console.log('Rust/Cargo detected, will build from source...');
+        buildFromSource();
+        installed = true;
+      } else {
+        console.error('');
+        console.error('❌ Installation failed: No pre-built binary and no Rust/Cargo found.');
+        console.error('');
+        console.error('Please install Rust first:');
+        console.error('  curl --proto "=https" --tlsv1.2 -sSf https://sh.rustup.rs | sh');
+        console.error('');
+        console.error('Or manually download the binary from:');
+        console.error(`https://github.com/${GITHUB_REPO}/releases`);
+        process.exit(1);
+      }
     }
     
     // Create symlink in npm global bin directory for global installs
@@ -131,9 +199,6 @@ async function install() {
     } catch (e) {
       // Ignore if npm bin -g fails (local install)
     }
-    
-    // Cleanup
-    fs.unlinkSync(tempFile);
     
     console.log('✅ Installation complete!');
     console.log(`Binary location: ${binaryPath}`);
