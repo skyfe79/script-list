@@ -8,7 +8,7 @@ A fast, modern Rust CLI tool to list and display npm scripts from `package.json`
 ## ✨ Features
 
 - 🚀 **Fast** - Written in Rust for maximum performance
-- 🎨 **Beautiful output** - Colorized table, list, or JSON formats
+- 🎨 **Beautiful output** - Clean, colorized output with consistent indentation
 - 🔍 **Filter support** - Search scripts by name
 - 📦 **Zero dependencies** - Single binary, no runtime requirements
 - 🖥️ **Cross-platform** - Works on macOS, Linux, and Windows
@@ -19,12 +19,12 @@ A fast, modern Rust CLI tool to list and display npm scripts from `package.json`
 ### From Source (Cargo)
 
 ```bash
-cargo install --git https://github.com/yfeelib/script-list
+cargo install --git https://github.com/skyfe79/script-list
 ```
 
 ### From Release
 
-Download pre-built binaries from [Releases](https://github.com/yfeelib/script-list/releases).
+Download pre-built binaries from [Releases](https://github.com/skyfe79/script-list/releases).
 
 ## 🚀 Usage
 
@@ -33,41 +33,50 @@ Download pre-built binaries from [Releases](https://github.com/yfeelib/script-li
 ```bash
 # List all scripts in current directory
 sl
+```
 
-# Output:
-# 📦 my-project
-# My awesome project
-#
-# Script       Command
-# ────────────────────────────────────────────────────
-# build        cargo build --release
-# test         cargo test
-# dev          npm run dev
-#
-# ℹ️  Found 3 script(s)
+**Output:**
+```
+   MyAwesomeProject
+
+    - build : babel src -d lib
+    - start : node server.js
+    - test  : jest --coverage --verbose
 ```
 
 ### Filter Scripts
 
 ```bash
 # Show only scripts containing "test"
-sl --filter test
+sl -f test
 
-# Or
-sl -f build
+# Output:
+#    MyAwesomeProject
+# 
+#     - test  : jest --coverage --verbose
 ```
 
 ### Different Formats
 
 ```bash
 # Table format (default)
-sl --format table
+sl -F table
 
 # Simple list
-sl --format list
+sl -F list
+# Output:
+#    build: babel src -d lib
+#    start: node server.js
+#    test: jest --coverage --verbose
 
 # JSON output
-sl --format json
+sl -F json
+# Output:
+#    {
+#      "build": "babel src -d lib",
+#      "start": "node server.js",
+#      "test": "jest --coverage --verbose"
+#    }
 ```
 
 ### Other Options
@@ -80,11 +89,24 @@ sl --names-only
 sl --path ./path/to/package.json
 ```
 
+### Error Handling
+
+```bash
+# When package.json is not found
+sl
+
+# Output:
+#    my-project
+# 
+#    No package.json file found:
+#      /Users/skyfe79/projects/my-project
+```
+
 ## 🛠️ Development
 
 ```bash
 # Clone
-git clone https://github.com/yfeelib/script-list
+git clone https://github.com/skyfe79/script-list
 cd script-list
 
 # Build
