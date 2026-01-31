@@ -38,7 +38,6 @@ enum OutputFormat {
 
 #[derive(Debug, Deserialize)]
 struct PackageJson {
-    name: Option<String>,
     #[serde(default)]
     scripts: HashMap<String, String>,
 }
