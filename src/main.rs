@@ -90,8 +90,10 @@ fn read_package_json(path: &PathBuf) -> Result<PackageJson> {
                 .unwrap_or("unknown");
             
             eprintln!();
-            eprintln!("{}", dir_name.red().bold());
-            eprintln!("{}", "   No package.json file found".truecolor(128, 128, 128));
+            eprintln!("   {}", dir_name.red().bold());
+            eprintln!();
+            eprintln!("   No package.json file found:");
+            eprintln!("     {}", current_dir.as_ref().map(|p| p.display().to_string()).unwrap_or_default());
             eprintln!();
             
             std::process::exit(1);
