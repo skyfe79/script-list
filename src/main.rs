@@ -106,7 +106,7 @@ fn read_package_json(path: &PathBuf) -> Result<PackageJson> {
     Ok(package)
 }
 
-fn print_scripts(package: &PackageJson, scripts: &[(String, String)], names_only: bool) {
+fn print_scripts(_package: &PackageJson, scripts: &[(String, String)], names_only: bool) {
     if names_only {
         for (name, _) in scripts {
             println!("{}", name);
@@ -114,7 +114,11 @@ fn print_scripts(package: &PackageJson, scripts: &[(String, String)], names_only
         return;
     }
 
-    let module_name = package.name.clone().unwrap_or_else(|| "unknown".to_string());
+    // Use current directory name (like rousan/sl does)
+    let module_name = env::current_dir()
+        .ok()
+        .and_then(|p| p.file_name().map(|n| n.to_string_lossy().to_string()))
+        .unwrap_or_else(|| "unknown".to_string());
     
     // Print module name (3 spaces prefix, green)
     println!();
