@@ -41,8 +41,6 @@ struct PackageJson {
     name: Option<String>,
     #[serde(default)]
     scripts: HashMap<String, String>,
-    #[serde(default)]
-    description: Option<String>,
 }
 
 fn main() -> Result<()> {
