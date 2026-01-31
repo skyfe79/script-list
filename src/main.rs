@@ -3,6 +3,7 @@ use clap::Parser;
 use colored::*;
 use serde::Deserialize;
 use std::collections::HashMap;
+use std::env;
 use std::fs;
 use std::path::PathBuf;
 
@@ -85,8 +86,31 @@ fn main() -> Result<()> {
 }
 
 fn read_package_json(path: &PathBuf) -> Result<PackageJson> {
-    let content = fs::read_to_string(path)
-        .with_context(|| format!("Failed to read {}", path.display()))?;
+    let content = match fs::read_to_string(path) {
+        Ok(c) => c,
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+            // Get current directory name
+            let current_dir = env::current_dir().ok();
+            let dir_name = current_dir
+                .as_ref()
+                .and_then(|p| p.file_name())
+                .and_then(|n| n.to_str())
+                .unwrap_or("unknown");
+            
+            eprintln!();
+            eprintln!("{}", format!("📁 {}", dir_name).bold().cyan());
+            eprintln!();
+            eprintln!("{}", "⚠️  No package.json found".yellow());
+            eprintln!();
+            eprintln!("{}", "This directory doesn't have a package.json file.".dimmed());
+            eprintln!("{}", "Please run 'sl' in a directory with a package.json file,".dimmed());
+            eprintln!("{}", "or specify the path with: sl --path ./path/to/package.json".dimmed());
+            eprintln!();
+            
+            std::process::exit(1);
+        }
+        Err(e) => return Err(e).with_context(|| format!("Failed to read {}", path.display()))?,
+    };
 
     let package: PackageJson = serde_json::from_str(&content)
         .with_context(|| format!("Failed to parse {} as JSON", path.display()))?;
