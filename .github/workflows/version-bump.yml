@@ -36,7 +36,7 @@ jobs:
         id: version
         run: |
           # Get current version
-          CURRENT_VERSION=$(grep '^version = ' Cargo.toml | head -d'"' -f2)
+          CURRENT_VERSION=$(grep '^version = ' Cargo.toml | head -1 | sed 's/version = "\(.*\)"/\1/')
           echo "Current version: $CURRENT_VERSION"
           
           MAJOR=$(echo $CURRENT_VERSION | cut -d. -f1)
