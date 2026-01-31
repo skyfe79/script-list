@@ -118,11 +118,26 @@ async function install() {
       fs.chmodSync(binaryPath, 0o755);
     }
     
+    // Create symlink in npm global bin directory for global installs
+    try {
+      const npmGlobalBin = execSync('npm bin -g', { encoding: 'utf8' }).trim();
+      if (npmGlobalBin && fs.existsSync(npmGlobalBin)) {
+        const globalLink = path.join(npmGlobalBin, BINARY_NAME);
+        if (!fs.existsSync(globalLink)) {
+          fs.symlinkSync(binaryPath, globalLink);
+          console.log(`Created global symlink: ${globalLink}`);
+        }
+      }
+    } catch (e) {
+      // Ignore if npm bin -g fails (local install)
+    }
+    
     // Cleanup
     fs.unlinkSync(tempFile);
     
     console.log('✅ Installation complete!');
     console.log(`Binary location: ${binaryPath}`);
+    console.log('You can now use: sl');
     
   } catch (error) {
     console.error('❌ Installation failed:', error.message);
