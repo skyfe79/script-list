@@ -68,14 +68,9 @@ fn main() -> Result<()> {
     // Sort by name
     scripts.sort_by(|a, b| a.0.cmp(&b.0));
 
-    // Print header
-    if !cli.names_only {
-        print_header(&package);
-    }
-
     // Output scripts
     match cli.format {
-        OutputFormat::Table => print_table(&scripts, cli.names_only),
+        OutputFormat::Table => print_scripts(&package, &scripts, cli.names_only),
         OutputFormat::List => print_list(&scripts, cli.names_only),
         OutputFormat::Json => print_json(&scripts)?,
     }
@@ -96,10 +91,8 @@ fn read_package_json(path: &PathBuf) -> Result<PackageJson> {
                 .unwrap_or("unknown");
             
             eprintln!();
-            eprintln!("        {}", dir_name.truecolor(139, 0, 0).bold()); // Dark red (8 spaces)
-            eprintln!();
-            eprintln!("        {}", "No package.json file found:".truecolor(128, 128, 128)); // 8 spaces
-            eprintln!("          {}", current_dir.as_ref().map(|p| p.display().to_string()).unwrap_or_default().truecolor(160, 160, 160)); // 10 spaces
+            eprintln!("{}", dir_name.red().bold());
+            eprintln!("{}", "   No package.json file found".truecolor(128, 128, 128));
             eprintln!();
             
             std::process::exit(1);
@@ -113,23 +106,28 @@ fn read_package_json(path: &PathBuf) -> Result<PackageJson> {
     Ok(package)
 }
 
-fn print_header(package: &PackageJson) {
-    if let Some(name) = &package.name {
-        println!("{}", name.green().bold());
-    }
-}
-
-fn print_table(scripts: &[(String, String)], names_only: bool) {
+fn print_scripts(package: &PackageJson, scripts: &[(String, String)], names_only: bool) {
     if names_only {
         for (name, _) in scripts {
-            println!("{}", name.green());
+            println!("{}", name);
         }
         return;
     }
 
-    // Print each script in clean format
+    let module_name = package.name.clone().unwrap_or_else(|| "unknown".to_string());
+    
+    // Print module name (3 spaces prefix, green)
+    println!();
+    println!("   {}", module_name.green());
+    println!();
+
+    // Calculate max script name length for padding
+    let max_len = scripts.iter().map(|(name, _)| name.len()).max().unwrap_or(0);
+
+    // Print each script (3 spaces + " - " prefix)
     for (name, command) in scripts {
-        println!("  {} : {}", name.green(), command);
+        let padded_name = format!("{:<width$}", name, width = max_len);
+        println!("    - {} : {}", padded_name.truecolor(128, 128, 128), command);
     }
 
     println!();
@@ -140,7 +138,7 @@ fn print_list(scripts: &[(String, String)], names_only: bool) {
         if names_only {
             println!("{}", name);
         } else {
-            println!("{}: {}", name.green().bold(), command);
+            println!("{}: {}", name, command);
         }
     }
 }
